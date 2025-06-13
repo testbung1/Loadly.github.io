@@ -1,6 +1,0 @@
-- name: Upload IPA to Loadly
-  run: |
-    curl -X POST https://api.loadly.io/apiv2/app/upload \
-      -F "_api_key=${{ secrets.LOADLY_API_KEY }}" \
-      -F "appKey=${{ secrets.LOADLY_APP_KEY }}" \
-      -F "file=@${{ github.workspace }}/path/to/YourApp.ipa"
