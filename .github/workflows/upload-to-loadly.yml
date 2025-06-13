@@ -1,41 +1,6 @@
-jobs:
-  upload:
-    runs-on: macos-latest      # ← đổi từ ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Setup signing certs
-        # nếu bạn cần import .p12 + mobileprovision vào keychain
-        run: |
-          security create-keychain -p "" build.keychain
-          security import ./certs/ios_dist.p12 -k build.keychain -P "${{ secrets.P12_PASSWORD }}" -T /usr/bin/codesign
-          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
-          cp ./certs/profile.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/
-
-      - name: Build iOS IPA
-        run: |
-          xcodebuild -workspace MyApp.xcworkspace \
-                     -scheme MyApp \
-                     -archivePath $PWD/MyApp.xcarchive \
-                     archive
-          xcodebuild -exportArchive \
-                     -archivePath $PWD/MyApp.xcarchive \
-                     -exportOptionsPlist ExportOptions.plist \
-                     -exportPath $PWD/build
-
-      - name: Fetch Loadly appKey
-        env:
-          LOADLY_API_KEY: ${{ secrets.LOADLY_API_KEY }}
-        run: |
-          resp=$(curl -s -X POST https://api.loadly.io/apiv2/app/listMy \
-            -d "_api_key=$LOADLY_API_KEY")
-          echo "APP_KEY=$(echo $resp | jq -r '.data[0].appKey')" >> $GITHUB_ENV
-
-      - name: Upload to Loadly.io
-        env:
-          LOADLY_API_KEY: ${{ secrets.LOADLY_API_KEY }}
-        run: |
-          curl -X POST https://api.loadly.io/apiv2/app/upload \
-            -F "_api_key=$LOADLY_API_KEY" \
-            -F "appKey=$APP_KEY" \
-            -F "file=@${{ github.workspace }}/build/MyApp.ipa"
+- name: Upload IPA to Loadly
+  run: |
+    curl -X POST https://api.loadly.io/apiv2/app/upload \
+      -F "_api_key=${{ secrets.LOADLY_API_KEY }}" \
+      -F "appKey=${{ secrets.LOADLY_APP_KEY }}" \
+      -F "file=@${{ github.workspace }}/path/to/YourApp.ipa"
